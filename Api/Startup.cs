@@ -15,6 +15,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenTracing;
+using Petabridge.Tracing.Zipkin;
 
 namespace Api
 {
@@ -57,12 +59,7 @@ namespace Api
 
       var metrics = new MetricsBuilder()
                   .Configuration.ReadFrom(configuration)
-                  .OutputMetrics.AsPlainText()
                   .OutputMetrics.AsJson()
-                  .Report.ToConsole(p =>
-                  {
-                    p.FlushInterval = TimeSpan.FromSeconds(30);
-                  })
                   .Build();
 
       return metrics;
@@ -86,6 +83,11 @@ namespace Api
       // builder.RegisterModule(new AutofacModule());
       // builder.RegisterInstance<IMetrics>(ConfigureMetrics()).SingleInstance();
       // builder.RegisterInstance<IHealth>(ConfigureHealth()).SingleInstance();
+
+      var url = "http://localhost:9411";
+      var tracer = new ZipkinTracer(new ZipkinTracerOptions(url, "api", debug: true));
+
+      builder.RegisterInstance<ITracer>(tracer);
     }
 
     // Configure is where you add middleware. This is called after
